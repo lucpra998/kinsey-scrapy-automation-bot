@@ -1,0 +1,12 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Kinsey UPC Scraper - Sequential" verbose="1" parallel="false">
+	<listeners>
+		<listener class-name="framework.listeners.ExtentTestListener" />
+	</listeners>
+
+	<test name="UPC Scrape">
+		<classes>
+			<class name="framework.tests.UPCAddToCartBatchTest" />
+		</classes>
+	</test>
+</suite>
