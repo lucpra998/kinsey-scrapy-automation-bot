@@ -27,7 +27,6 @@ jobs:
       
     - name: Run TestNG Parallel Test Suite
       run: mvn test -DsuiteXmlFile=testng-parallel.xml -B
-      continue-on-error: true
       
     - name: Upload TestNG Reports
       if: always()
