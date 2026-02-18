@@ -51,21 +51,33 @@ The following files from master have been merged into both main and development-
 
 ### Required: Push the Changes
 
-The merges have been completed locally but need to be pushed to the remote repository. Due to permission restrictions in the sandbox environment, manual intervention is required:
+The merges have been completed locally but need to be pushed to the remote repository. Due to permission restrictions in the sandbox environment, manual intervention is required. Choose one of the following options:
 
-#### Option 1: Using the provided script
+#### Option 1: Using GitHub Actions (Recommended)
+A workflow file has been created at `.github/workflows/merge-master-to-branches.yml`
+
+To use it:
+1. Merge this PR to add the workflow file to the repository
+2. Go to Actions tab in GitHub
+3. Select "Merge Master to Main and Development Branches" workflow
+4. Click "Run workflow"
+5. The workflow will automatically merge master into both main and development-shivang branches
+
+#### Option 2: Using the provided shell script
 ```bash
 ./merge-master-to-branches.sh
 ```
 
-#### Option 2: Manual commands
+#### Option 3: Manual git commands
 ```bash
 # Push main branch
 git checkout main
+git merge master --allow-unrelated-histories --no-edit
 git push origin main
 
 # Push development-shivang branch
 git checkout development-shivang
+git merge master --allow-unrelated-histories --no-edit
 git push origin development-shivang
 ```
 
