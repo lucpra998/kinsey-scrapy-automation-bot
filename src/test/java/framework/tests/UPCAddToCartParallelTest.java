@@ -7,6 +7,7 @@ import framework.pages.LoginPage;
 import framework.pages.ProductSearchPage;
 import framework.utils.CSVUtils;
 import framework.utils.FileUtils;
+import framework.utils.ProgressTracker;
 import framework.utils.ReportLogger;
 import framework.utils.ScreenshotUtils;
 import framework.utils.WaitUtils;
@@ -16,6 +17,7 @@ import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Parallel runner: each TestNG invocation processes one batch with its own
@@ -29,9 +31,21 @@ public class UPCAddToCartParallelTest {
 	/** Creates parallel batch slices of the UPC list. */
 	@DataProvider(name = "batches", parallel = true)
 	public Object[][] batches() {
-		List<String> upcs = FileUtils.readUpcs(FrameworkConstants.UPC_FILE);
-		if (upcs == null || upcs.isEmpty()) {
+		List<String> allUpcs = FileUtils.readUpcs(FrameworkConstants.UPC_FILE);
+		if (allUpcs == null || allUpcs.isEmpty()) {
 			throw new RuntimeException("No UPCs found in: " + FrameworkConstants.UPC_FILE);
+		}
+
+		// Resume support: skip UPCs that were already processed in a previous run.
+		Set<String> processed = ProgressTracker.loadProcessed();
+		List<String> upcs;
+		if (processed.isEmpty()) {
+			upcs = allUpcs;
+		} else {
+			upcs = new ArrayList<>(allUpcs);
+			upcs.removeAll(processed);
+			ReportLogger.info("Resuming run: " + processed.size() + " UPCs already done, "
+					+ upcs.size() + " remaining.");
 		}
 
 		int batchSize = FrameworkConstants.BATCH_SIZE;
@@ -205,6 +219,7 @@ public class UPCAddToCartParallelTest {
 				productPage.getMsrpPrice(), productPage.getPrimaryColor(), productPage.getProhibitedStates(),
 				productPage.getVendorItemNo(), productPage.getYearLaunched(), productPage.getProp65Applies(),
 				productPage.getProp65CancerHarm(), productPage.getProp65ReproductiveHarm());
+		ProgressTracker.markProcessed(normUpc);
 
 		if ("ADD TO CART PRESENT".equals(status))
 			ReportLogger.pass("ADD TO CART PRESENT for UPC: " + normUpc);
@@ -295,6 +310,7 @@ public class UPCAddToCartParallelTest {
 		CSVUtils.appendFull(csvPath, upc, addToCart, safeUrl(currentDriver), status, message, null, null, null, null,
 				null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
 				null, null);
+		ProgressTracker.markProcessed(upc);
 	}
 
 	/** Safely returns the current URL or empty string. */
