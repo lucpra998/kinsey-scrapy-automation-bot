@@ -28,7 +28,7 @@ jobs:
       run: mvn clean compile -B
       
     - name: Run TestNG Parallel Test Suite
-      run: mvn test -DsuiteXmlFile=testng-parallel.xml -B
+      run: mvn test -DsuiteXmlFile=testng-parallel.xml -Dheadless=true -B
       
     - name: Upload TestNG Reports
       if: always()
