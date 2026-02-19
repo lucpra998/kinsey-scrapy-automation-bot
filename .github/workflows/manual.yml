@@ -3,6 +3,8 @@ name: CI/CD - TestNG Parallel Test Suite
 on:
   push:
     branches: [ development-shivang ]
+  pull_request:
+    branches: [ development-shivang ]
 jobs:
   test:
     name: Run TestNG Parallel Tests
