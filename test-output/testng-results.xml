@@ -1,61 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testng-results ignored="0" total="3" passed="3" failed="0" skipped="0">
+<testng-results ignored="0" total="1" passed="1" failed="0" skipped="0">
   <reporter-output>
   </reporter-output>
-  <suite started-at="2026-02-19T01:17:00 IST" name="Kinsey UPC Scraper - Parallel" finished-at="2026-02-19T01:20:02 IST" duration-ms="181130">
+  <suite started-at="2026-02-19T09:55:42 IST" name="Default suite" finished-at="2026-02-19T09:58:31 IST" duration-ms="169042">
     <groups>
     </groups>
-    <test started-at="2026-02-19T01:17:00 IST" name="UPC Scrape Parallel" finished-at="2026-02-19T01:20:02 IST" duration-ms="181130">
-      <class name="framework.tests.UPCAddToCartParallelTest">
-        <test-method signature="processBatch(int,java.util.List)[pri:0, instance:framework.tests.UPCAddToCartParallelTest@217ed35e]" started-at="2026-02-19T01:17:01 IST" name="processBatch" data-provider="batches" finished-at="2026-02-19T01:20:02 IST" duration-ms="180937" status="PASS">
+    <test started-at="2026-02-19T09:55:42 IST" name="Default test" finished-at="2026-02-19T09:58:31 IST" duration-ms="169042">
+      <class name="framework.tests.UPCAddToCartBatchTest">
+        <test-method signature="processAllUpcs(org.testng.ITestContext)[pri:0, instance:framework.tests.UPCAddToCartBatchTest@10683d9d]" started-at="2026-02-19T09:55:42 IST" name="processAllUpcs" finished-at="2026-02-19T09:58:31 IST" duration-ms="168857" status="PASS">
           <params>
             <param index="0">
               <value>
-                <![CDATA[2]]>
-              </value>
-            </param>
-            <param index="1">
-              <value>
-                <![CDATA[[647164102005, 647164100315]]]>
+                <![CDATA[org.testng.TestRunner@732d0d24]]>
               </value>
             </param>
           </params>
           <reporter-output>
           </reporter-output>
-        </test-method> <!-- processBatch -->
-        <test-method signature="processBatch(int,java.util.List)[pri:0, instance:framework.tests.UPCAddToCartParallelTest@217ed35e]" started-at="2026-02-19T01:17:01 IST" name="processBatch" data-provider="batches" finished-at="2026-02-19T01:19:50 IST" duration-ms="169133" status="PASS">
-          <params>
-            <param index="0">
-              <value>
-                <![CDATA[1]]>
-              </value>
-            </param>
-            <param index="1">
-              <value>
-                <![CDATA[[147164610321, 147164810516]]]>
-              </value>
-            </param>
-          </params>
-          <reporter-output>
-          </reporter-output>
-        </test-method> <!-- processBatch -->
-        <test-method signature="processBatch(int,java.util.List)[pri:0, instance:framework.tests.UPCAddToCartParallelTest@217ed35e]" started-at="2026-02-19T01:17:01 IST" name="processBatch" data-provider="batches" finished-at="2026-02-19T01:20:01 IST" duration-ms="180353" status="PASS">
-          <params>
-            <param index="0">
-              <value>
-                <![CDATA[3]]>
-              </value>
-            </param>
-            <param index="1">
-              <value>
-                <![CDATA[[147164610116, 147164780024]]]>
-              </value>
-            </param>
-          </params>
-          <reporter-output>
-          </reporter-output>
-        </test-method> <!-- processBatch -->
-      </class> <!-- framework.tests.UPCAddToCartParallelTest -->
-    </test> <!-- UPC Scrape Parallel -->
-  </suite> <!-- Kinsey UPC Scraper - Parallel -->
+        </test-method> <!-- processAllUpcs -->
+      </class> <!-- framework.tests.UPCAddToCartBatchTest -->
+    </test> <!-- Default test -->
+  </suite> <!-- Default suite -->
 </testng-results>
