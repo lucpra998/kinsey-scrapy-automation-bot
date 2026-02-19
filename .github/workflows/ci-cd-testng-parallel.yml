@@ -2,10 +2,7 @@ name: CI/CD - TestNG Parallel Test Suite
 
 on:
   push:
-    branches: [ master, main, development-* ]
-  pull_request:
-    branches: [ master, main, development-* ]
-
+    branches: [ master ]
 jobs:
   test:
     name: Run TestNG Parallel Tests
