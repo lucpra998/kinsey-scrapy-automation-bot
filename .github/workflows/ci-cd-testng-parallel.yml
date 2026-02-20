@@ -9,16 +9,37 @@ jobs:
   test:
     name: Run TestNG Parallel Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 1440
+    # GitHub-hosted runners enforce a hard 6-hour (360-minute) job limit regardless
+    # of what timeout-minutes is set to. Keeping this at 350 stays within that
+    # platform ceiling and avoids a silent kill at the 360-minute mark.
+    timeout-minutes: 350
     
     permissions:
       contents: read
     
     steps:
+    - name: Print runner diagnostics
+      timeout-minutes: 2
+      run: |
+        echo "=== Runner diagnostics ==="
+        echo "Timestamp (UTC): $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+        echo "Runner OS:       ${{ runner.os }}"
+        echo "GitHub ref:      ${{ github.ref }}"
+        echo "Run ID:          ${{ github.run_id }}"
+        echo "NOTE: GitHub-hosted runners enforce a hard 6-hour job limit."
+        echo "      This workflow sets timeout-minutes: 350 to stay within that limit."
+        java -version 2>&1 || true
+        mvn --version 2>&1 || true
+        echo "Disk: $(df -h / | tail -1)"
+        echo "RAM:  $(free -h | grep Mem)"
+        echo "CPUs: $(nproc)"
+
     - name: Checkout repository
+      timeout-minutes: 5
       uses: actions/checkout@v4
       
     - name: Set up JDK 11
+      timeout-minutes: 10
       uses: actions/setup-java@v4
       with:
         java-version: '11'
@@ -26,6 +47,7 @@ jobs:
         cache: 'maven'
     
     - name: Restore UPC progress checkpoint
+      timeout-minutes: 5
       uses: actions/cache@v4
       with:
         path: ScrapingOutputResults/progress/
@@ -34,13 +56,41 @@ jobs:
           upc-progress-${{ github.ref }}-
     
     - name: Build with Maven
-      run: mvn clean compile -B
-      
+      timeout-minutes: 15
+      run: mvn clean compile -B --no-transfer-progress
+
     - name: Run TestNG Parallel Test Suite
-      run: mvn test -DsuiteXmlFile=testng-parallel.xml -Dheadless=true -B
-      
+      # Allow up to 300 minutes for the test run itself, leaving headroom for
+      # setup and artifact upload within the 350-minute job timeout.
+      timeout-minutes: 300
+      run: |
+        # Heartbeat: print a timestamped line every 5 minutes so GitHub does not
+        # kill the job for producing no output (10-minute inactivity limit).
+        while true; do
+          echo "[heartbeat] $(date -u '+%Y-%m-%dT%H:%M:%SZ') - test suite still running..."
+          sleep 300
+        done &
+        HEARTBEAT_PID=$!
+
+        echo "[diagnostics] Starting Maven test at $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+        mvn test -DsuiteXmlFile=testng-parallel.xml -Dheadless=true -B --no-transfer-progress
+        MVN_EXIT=$?
+
+        kill "$HEARTBEAT_PID" 2>/dev/null || true
+        echo "[diagnostics] Maven test finished at $(date -u '+%Y-%m-%dT%H:%M:%SZ') with exit code $MVN_EXIT"
+        exit $MVN_EXIT
+
+    - name: Save UPC progress checkpoint
+      if: always()
+      timeout-minutes: 5
+      uses: actions/cache/save@v4
+      with:
+        path: ScrapingOutputResults/progress/
+        key: upc-progress-${{ github.ref }}-${{ github.run_id }}
+
     - name: Upload TestNG Reports
       if: always()
+      timeout-minutes: 10
       uses: actions/upload-artifact@v4
       with:
         name: testng-reports
@@ -51,6 +101,7 @@ jobs:
         
     - name: Upload Surefire Reports
       if: always()
+      timeout-minutes: 10
       uses: actions/upload-artifact@v4
       with:
         name: surefire-reports
