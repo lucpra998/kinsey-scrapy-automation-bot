@@ -9,6 +9,7 @@ jobs:
   test:
     name: Run TestNG Parallel Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 1440
     
     permissions:
       contents: read
