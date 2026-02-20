@@ -5,42 +5,112 @@ on:
     branches: [ development-shivang ]
   pull_request:
     branches: [ development-shivang ]
+
+# Allow only one scraping run per branch at a time.
+# cancel-in-progress: false keeps a long-running scrape alive when a new push
+# arrives; the newer run queues and starts after the current one completes.
+# See docs/ci-cd-troubleshooting.md for details.
+concurrency:
+  group: scrape-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   test:
     name: Run TestNG Parallel Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 1440
-    
+    # GitHub-hosted runners are hard-capped at 6 hours (360 min) per job
+    # regardless of this value. 350 min lets the workflow timeout fire first so
+    # post-job steps (cache save, artifact upload) still have time to complete.
+    # See docs/ci-cd-troubleshooting.md for background.
+    timeout-minutes: 350
+
     permissions:
       contents: read
-    
+
     steps:
+    - name: Print runner diagnostics
+      run: |
+        echo "=== Runner Info ==="
+        echo "Runner OS  : $RUNNER_OS"
+        echo "Runner Name: $RUNNER_NAME"
+        echo "Workflow   : $GITHUB_WORKFLOW"
+        echo "Run ID     : $GITHUB_RUN_ID"
+        echo "Run Number : $GITHUB_RUN_NUMBER"
+        echo "SHA        : $GITHUB_SHA"
+        echo "Ref        : $GITHUB_REF"
+        echo "Actor      : $GITHUB_ACTOR"
+        echo "Event      : $GITHUB_EVENT_NAME"
+        echo "Started at : $(date -u)"
+        echo ""
+        echo "=== System Resources ==="
+        uname -a
+        echo "CPUs: $(nproc)"
+        free -h
+        df -h /
+        echo ""
+        echo "=== Chrome ==="
+        google-chrome --version 2>/dev/null || chromium-browser --version 2>/dev/null || echo "Chrome not yet on PATH"
+
     - name: Checkout repository
       uses: actions/checkout@v4
-      
+      timeout-minutes: 5
+
     - name: Set up JDK 11
       uses: actions/setup-java@v4
+      timeout-minutes: 10
       with:
         java-version: '11'
         distribution: 'temurin'
         cache: 'maven'
-    
+
     - name: Restore UPC progress checkpoint
       uses: actions/cache@v4
+      timeout-minutes: 5
       with:
         path: ScrapingOutputResults/progress/
         key: upc-progress-${{ github.ref }}-${{ github.run_id }}
         restore-keys: |
           upc-progress-${{ github.ref }}-
-    
+
+    - name: Verify Chrome installation
+      timeout-minutes: 5
+      run: |
+        echo "=== Chrome Version ==="
+        google-chrome --version || chromium-browser --version || \
+          { echo "ERROR: Chrome not found on runner"; exit 1; }
+        echo "=== ChromeDriver ==="
+        which chromedriver 2>/dev/null && chromedriver --version || \
+          echo "chromedriver not in PATH - WebDriverManager will download a matching version at runtime"
+
     - name: Build with Maven
+      timeout-minutes: 10
       run: mvn clean compile -B
-      
+
     - name: Run TestNG Parallel Test Suite
-      run: mvn test -DsuiteXmlFile=testng-parallel.xml -Dheadless=true -B
-      
+      timeout-minutes: 320
+      run: |
+        echo "[INFO] Test run starting at: $(date -u)"
+        echo "[INFO] Memory: $(free -h | grep Mem)"
+        echo "[INFO] Disk  : $(df -h / | tail -1)"
+
+        # Heartbeat: print a status line every 5 minutes so GitHub does not
+        # consider the job idle and the log shows where time is spent.
+        ( while sleep 300; do
+            echo "[HEARTBEAT] $(date -u) - scraping still in progress"
+            free -h || true
+          done ) &
+        HEARTBEAT_PID=$!
+
+        mvn test -DsuiteXmlFile=testng-parallel.xml -Dheadless=true -B
+        EXIT_CODE=$?
+
+        kill "$HEARTBEAT_PID" 2>/dev/null || true
+        echo "[INFO] Test run finished at: $(date -u) (exit code: $EXIT_CODE)"
+        exit "$EXIT_CODE"
+
     - name: Upload TestNG Reports
       if: always()
+      timeout-minutes: 10
       uses: actions/upload-artifact@v4
       with:
         name: testng-reports
@@ -48,9 +118,10 @@ jobs:
           test-output/
           ScrapingOutputResults/
         retention-days: 30
-        
+
     - name: Upload Surefire Reports
       if: always()
+      timeout-minutes: 10
       uses: actions/upload-artifact@v4
       with:
         name: surefire-reports
